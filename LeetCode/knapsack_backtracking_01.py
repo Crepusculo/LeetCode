@@ -4,7 +4,7 @@ cur_value = 0
 max_back = []
 
 w = [20, 22, 61]
-v = [60, 32, 51]
+v = [30, 32, 51]
 n = len(w)
 l = 100
 
@@ -33,4 +33,3 @@ def backtrack(i):
 cur_back = [0 for i in range(n)]
 backtrack(0)
 print('Max Value is ', max_value, "\t And the solution is", list(max_back))
-
