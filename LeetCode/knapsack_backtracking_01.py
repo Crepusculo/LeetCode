@@ -1,41 +1,36 @@
-n = 5
-color = [1, 2, 3, 4]
-point = [0 for i in range(n)]
-matrix = [
-    [0, 1, 1, 0, 0],
-    [1, 0, 1, 1, 1],
-    [1, 1, 0, 0, 1],
-    [0, 1, 0, 0, 1],
-    [0, 1, 1, 1, 0],
-]
+max_value = 0
+cur_weight = 0
+cur_value = 0
+max_back = []
 
-ret = []
+w = [20, 22, 61]
+v = [60, 32, 51]
+n = len(w)
+l = 100
 
 
-def backtrack(ptr):
-    global n, ret
-    # if 直到完成都没有冲突
-    if ptr >= n:
-        conflict = 0
-        for i in range(n):
-            for j in range(n):
-                if matrix[i][j] == 1 and point[j] == point[i]:
-                    conflict += 1
-        # if 着色不冲突
-        if conflict == 0:
-            ret = point[:]
+def backtrack(i):
+    global max_value, cur_weight, cur_value, cur_back, max_back, w, v, n, l
+    if i >= n:
+        if max_value < cur_value:
+            max_value = cur_value
+            max_back = cur_back[:]
     else:
-        for i in color:
-            # recursion
-            point[ptr] = color.index(i)
-            backtrack(ptr + 1)
+        if cur_weight + w[i] <= l:
+            cur_back[i] = 1
+            cur_weight += w[i]
+            cur_value += v[i]
+
+            backtrack(i + 1)
+
+            cur_weight -= w[i]
+            cur_value -= v[i]
+
+        cur_back[i] = 0
+        backtrack(i + 1)
 
 
-def main():
-    backtrack(0)
+cur_back = [0 for i in range(n)]
+backtrack(0)
+print('Max Value is ', max_value, "\t And the solution is", list(max_back))
 
-    print("And the solution is", ret)
-
-
-if __name__ == '__main__':
-    main()
