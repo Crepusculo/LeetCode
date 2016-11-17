@@ -9,9 +9,7 @@ BB_stack = []
 BB_tree = []
 
 
-class BTreeNode():
-    """Structure to represent  a binary tree node in branch and bound method"""
-
+class BTreeNode:
     def __init__(self):
         self.ParentNode = None
         self.Relaxation = 0
@@ -49,7 +47,7 @@ def branch_bound():
     Root.Room = capacity
     Root.Objective = 0
     Root.ObjectID = -1
-    Root.Relaxation = get_bound(items - 1, Root.ObjectID, Root.Room, Root.Objective, weights, values, value_per_weight)
+    Root.Relaxation = get_bound(items - 1, Root, weights, values, value_per_weight)
 
     # Add root node to the tree
     BB_tree.append(Root)
@@ -57,7 +55,7 @@ def branch_bound():
 
     # Branch while stack is not empty
     while BB_stack:
-        Branch(items - 1, values, weights, value_per_weight)
+        Branch(items - 1, value_per_weight)
 
     # Retrace which items were taken and which ignored
     Node = BB_solution
@@ -66,11 +64,11 @@ def branch_bound():
         taken[value_per_weight[Node.ObjectID][0]] = Node.Taken
         Node = Node.ParentNode
 
-    return (BB_solution.Objective, taken)
+    return BB_solution.Objective, taken
 
 
-def Branch(items, values, weights, value_per_weight):
-    global BB_solution, BB_tree, BB_stack
+def Branch(items, value_per_weight):
+    global BB_solution, BB_tree, BB_stack, values, weights
 
     if not BB_stack:
         return
@@ -89,7 +87,7 @@ def Branch(items, values, weights, value_per_weight):
         Node.Objective = Root.Objective
         Node.Taken = 0
         # Node.Relaxation = Root.Relaxation - values[Node.ObjectID]
-        Node.Relaxation = get_bound(items, Node.ObjectID, Node.Room, Node.Objective, weights, values, value_per_weight)
+        Node.Relaxation = get_bound(items, Node, weights, values, value_per_weight)
         Node.ParentNode = Root
         # Root.RightNode = Node
         BB_stack.append(Node)
@@ -108,7 +106,7 @@ def Branch(items, values, weights, value_per_weight):
         Node.Objective = Root.Objective + values[Node.ObjectID]
         Node.Taken = 1
         # Node.Relaxation = Root.Relaxation
-        Node.Relaxation = get_bound(items, Node.ObjectID, Node.Room, Node.Objective, weights, values, value_per_weight)
+        Node.Relaxation = get_bound(items, Node, weights, values, value_per_weight)
         Node.ParentNode = Root
         # Root.LeftNode = Node
         BB_stack.append(Node)
@@ -121,7 +119,10 @@ def Branch(items, values, weights, value_per_weight):
     BB_tree.append(Node)
 
 
-def get_bound(items, rootid, root_room, root_objective, weights, values, value_per_weight):
+def get_bound(items, root, weights, values, value_per_weight):
+    rootid = root.ObjectID
+    root_objective = root.Objective
+    root_room = root.Room
     while rootid < items and root_room - weights[rootid + 1] >= 0:
         root_objective = root_objective + values[rootid + 1]
         root_room = root_room - weights[rootid + 1]
