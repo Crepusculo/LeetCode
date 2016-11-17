@@ -2,145 +2,129 @@
 # -*- coding: utf-8 -*-
 
 capacity = 30
-weights = [20, 10, 15]
-values = [10, 20, 30]
-BB_solution = None
-BB_stack = []
-BB_tree = []
+weights = [10, 10, 10, 10]
+values = [13, 11, 15, 20]
+result = None
+kp_stack = []
+kp_tree = []
 
 
 class BTreeNode:
     def __init__(self):
-        self.ParentNode = None
-        self.Relaxation = 0
-        self.Objective = 0
-        self.ObjectID = -1
-        self.Taken = None
-        self.Room = None
+        self.parent = None
+        self.remain = 0
+        self.bound = 0
+        self.id = -1
+        self.is_taken = False
+        self.room = None
+
+    def __str__(self):
+        return str(self.id) + "[" + str(self.is_taken) + "]:" + str(self.bound) + ", " + str(
+            self.room) + ", " + str(self.remain)
 
 
 def branch_bound():
-    global capacity, weights, values
-    # array indicating whether an
-    # element has been taken or not.
-    global BB_tree, BB_stack
-
-    # Get number of items
+    global capacity, weights, values, kp_tree, kp_stack
     items = len(values)
+    cur_take = [False] * items
+    root = BTreeNode()
 
-    # Allocate memory for taken
-    taken = [0] * items
-
-    # Create a list containing (index, value/weight)
-    value_per_weight = [(elem[0][0], elem[0][1] / elem[1]) for elem in zip(enumerate(values), weights)]
-
-    # Sort the list in descending order
+    # Get density and sort by it
+    value_per_weight = [[each[0][0], each[0][1] / each[1]] for each in zip(enumerate(values), weights)]
     value_per_weight.sort(key=lambda pair: pair[1], reverse=True)
 
-    # Reorder values and weights
     weights = [weights[element[0]] for element in value_per_weight]
     values = [values[element[0]] for element in value_per_weight]
 
-    # Create root node
-    Root = BTreeNode()
-    # Root.Relaxation = sum(values)
-    Root.Room = capacity
-    Root.Objective = 0
-    Root.ObjectID = -1
-    Root.Relaxation = get_bound(items - 1, Root, weights, values, value_per_weight)
+    # Initial root node
+    root.room = capacity
+    root.remain = get_bound(items - 1, root, value_per_weight)
+    kp_tree.append(root)
+    kp_stack.append(root)
 
-    # Add root node to the tree
-    BB_tree.append(Root)
-    BB_stack.append(Root)
+    # Still stack not empty
+    while kp_stack:
+        go_branch(items - 1, value_per_weight)
 
-    # Branch while stack is not empty
-    while BB_stack:
-        Branch(items - 1, value_per_weight)
+    node = result
+    # back track to root
+    while node.parent:
+        cur_take[value_per_weight[node.id][0]] = node.is_taken
+        print(node.is_taken, node.room)
+        node = node.parent
 
-    # Retrace which items were taken and which ignored
-    Node = BB_solution
-
-    while Node.ParentNode:
-        taken[value_per_weight[Node.ObjectID][0]] = Node.Taken
-        Node = Node.ParentNode
-
-    return BB_solution.Objective, taken
+    return result.bound, cur_take
 
 
-def Branch(items, value_per_weight):
-    global BB_solution, BB_tree, BB_stack, values, weights
+def go_branch(items, value_per_weight):
+    global result, kp_tree, kp_stack, values, weights
 
-    if not BB_stack:
+    if not kp_stack:
         return
     else:
-        Root = BB_stack.pop()
+        root = kp_stack.pop()
 
-    if BB_solution and Root.Relaxation < BB_solution.Objective:
+    if result and root.remain < result.bound:
         return
-    elif Root.ObjectID == items:
+    elif root.id == items:
         return
 
-    Node = BTreeNode()
-    Node.ObjectID = Root.ObjectID + 1
-    Node.Room = Root.Room
-    if Node.Room >= 0:
-        Node.Objective = Root.Objective
-        Node.Taken = 0
-        # Node.Relaxation = Root.Relaxation - values[Node.ObjectID]
-        Node.Relaxation = get_bound(items, Node, weights, values, value_per_weight)
-        Node.ParentNode = Root
-        # Root.RightNode = Node
-        BB_stack.append(Node)
-        if Node.Objective == Node.Relaxation:
-            if BB_solution and Node.Objective > BB_solution.Objective:
-                BB_solution = Node
-            elif BB_solution is None:
-                BB_solution = Node
+    # get
+    node = BTreeNode()
+    node.id = root.id + 1
+    node.room = root.room
+    if node.room >= 0:
+        node.bound = root.bound
+        node.is_taken = False
+        node.remain = get_bound(items, node, value_per_weight)
+        node.parent = root
+        kp_stack.append(node)
+        if node.bound == node.remain:
+            if result and node.bound > result.bound:
+                result = node
+            elif result is None:
+                result = node
 
-    BB_tree.append(Node)
-
-    Node = BTreeNode()
-    Node.ObjectID = Root.ObjectID + 1
-    Node.Room = Root.Room - weights[Node.ObjectID]
-    if Node.Room >= 0:
-        Node.Objective = Root.Objective + values[Node.ObjectID]
-        Node.Taken = 1
-        # Node.Relaxation = Root.Relaxation
-        Node.Relaxation = get_bound(items, Node, weights, values, value_per_weight)
-        Node.ParentNode = Root
-        # Root.LeftNode = Node
-        BB_stack.append(Node)
-        if Node.Objective == Node.Relaxation:
-            if BB_solution and Node.Objective > BB_solution.Objective:
-                BB_solution = Node
-            elif BB_solution is None:
-                BB_solution = Node
-
-    BB_tree.append(Node)
+    kp_tree.append(node)
+    print(node)
 
 
-def get_bound(items, root, weights, values, value_per_weight):
-    rootid = root.ObjectID
-    root_objective = root.Objective
-    root_room = root.Room
-    while rootid < items and root_room - weights[rootid + 1] >= 0:
-        root_objective = root_objective + values[rootid + 1]
-        root_room = root_room - weights[rootid + 1]
-        rootid = rootid + 1
+    # do not
+    node = BTreeNode()
+    node.id = root.id + 1
+    node.room = root.room - weights[node.id]
+    if node.room >= 0:
+        node.bound = root.bound + values[node.id]
+        node.is_taken = True
+        node.remain = get_bound(items, node, value_per_weight)
+        node.parent = root
+        kp_stack.append(node)
+        if node.bound == node.remain:
+            if result and node.bound > result.bound:
+                result = node
+            elif result is None:
+                result = node
 
-    if rootid < items and root_room > 0:
-        root_objective = root_objective + min(root_room, weights[rootid + 1]) * value_per_weight[rootid + 1][1]
-
-    return root_objective
+    kp_tree.append(node)
+    print(node)
 
 
-import sys
+def get_bound(items, root, value_per_weight):
+    global weights, values
+    cur_id = root.id
+    cur_bound = root.bound
+    cur_room = root.room
+    while cur_id < items and 0 <= cur_room - weights[cur_id + 1]:
+        cur_bound += values[cur_id + 1]
+        cur_room -= weights[cur_id + 1]
+        cur_id += 1
+
+    if cur_id < items and cur_room > 0:
+        cur_bound = cur_bound + min(cur_room, weights[cur_id + 1]) * value_per_weight[cur_id + 1][1]
+
+    return cur_bound
+
 
 if __name__ == '__main__':
     value, taken = branch_bound()
-    # value, taken = BB_solver_lm(capacity, weights, values)
-
-    # prepare the solution in the specified output format
-    outputData = str(value) + ' ' + str(0) + '\n'
-    outputData += ' '.join(map(str, taken))
-    print(outputData)
+    print("Max Weight is " + str(value) + "\t And the pack is: ", taken)
