@@ -1,5 +1,5 @@
 n = 5
-color = [1, 2, 3, 4]
+color = [0, 1, 2]
 point = [0 for i in range(n)]
 matrix = [
     [0, 1, 1, 0, 0],
@@ -15,7 +15,7 @@ ret = []
 def backtrack(ptr):
     global n, ret
     # if 直到完成都没有冲突
-    if ptr >= n:
+    if ptr > n - 1:
         conflict = 0
         for i in range(n):
             for j in range(n):
@@ -25,9 +25,12 @@ def backtrack(ptr):
         if conflict == 0:
             ret = point[:]
     else:
-        for i in color:
+
+        for i in range(len(color)):
             # recursion
-            point[ptr] = color.index(i)
+            point[ptr] = color[i]
+
+            # print(point)
             backtrack(ptr + 1)
 
 
