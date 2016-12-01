@@ -1,38 +1,26 @@
 w = [1, 2, 3, 4, 5, 6, 10]
-v = [2, 3, 6, 28, 40, 3, 10]
+v = [4, 4, 4, 8, 10, 3, 10]
 n = len(w)
-limit = 10
+limit = 15
 
 
 def greedy(limit):
     global w, v, n
-    mark = -1
-    cur_v = 0
     cur_w = 0
-    max_v = 0
-    cur_back = [0 for i in range(n)]
+    cur_v = 0
+    l = [[x, y, y/x] for x, y in zip(w, v)]
+    l.sort(key=lambda x: (x[2]), reverse=True)
+    print(l)
+    for i in l:
+        print(i[0], i[1])
+        if cur_w + i[0] <= limit:
+            cur_w += i[0]
+            cur_v += i[1]
+            print("pick! v:", cur_v, "w:", cur_w)
 
-    # get p list
-    p = []
-    for i in range(n):
-        p.append(v[i] / w[i])
-
-    status = True
-    while status:
-        for i in p:
-            if i == max(p):
-                idx = p.index(i)
-                cur_w += w[idx]
-                cur_v += v[idx]
-                if cur_w <= limit:
-                    cur_back[idx] = 1
-                    max_v = cur_v
-                    p[idx] = mark
-                    # print('Max Value is ', cur_v, "\t And the solution is", cur_back)
-                else:
-                    status = False
-
-    print('Max Value is ', max_v, "\t And the solution is", cur_back)
+    print(cur_v, cur_w)
+    return cur_v, cur_w
 
 
-greedy(limit)
+print(greedy(limit))
+
