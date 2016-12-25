@@ -16,7 +16,6 @@ def e(i):
     ori = i
     while i - 1 > 0:
         if math.fabs(abs[i - 1][0] - abs[ori][0]) > 5:
-            print(abs[i - 1][0], abs[ori][0])
             return i
         i -= 1
     return 0
@@ -25,7 +24,8 @@ def e(i):
 result = []
 i = 0
 
-print(best_value(len(abs)), result)
+
+print(best_value(len(abs)))
 print(best_value(3))
 print(best_value(2))
 print(best_value(1))
